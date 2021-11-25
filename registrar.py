@@ -1,3 +1,4 @@
+#EN ESTA PARTE SI GENERA LA VENTANA, SOLO QUE SE AÑADE EL NOMBRE DEL ARCHIVO DE GUARDAR, NI DE LOS DE AÑADIR, APARECE COMO nombre1 is not defined.
 from tkinter import *
 from tkinter import Tk, Label, Button, Entry, Frame, END, messagebox
 import pandas as pd
