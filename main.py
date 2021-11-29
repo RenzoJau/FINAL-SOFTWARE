@@ -1,5 +1,5 @@
-from sistema import ventanaprincipal
+from sistema import ventana_principal
 
 if __name__ == '__main__':
-    main_window = ventanaprincipal()
+    main_window = ventana_principal()
     main_window.mainloop()

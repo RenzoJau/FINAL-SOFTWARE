@@ -1,12 +1,15 @@
 from tkinter import *
-from tkinter import messagebox, filedialog, Tk, Button, Frame
+from tkinter import messagebox, filedialog, ttk, Tk, Button, Frame
 import random
 import time
-from registrar import Registro2
-import pandas as pd
+from crear_registro import registro
+import sqlite3
+#import pandas as pd
+#import openpyxl
 #import matplotlib.pyplot as plt
 
-class ventanaprincipal(Tk):
+
+class ventana_principal(Tk):
     def __init__(self):
         super().__init__()
         self.geometry('1270x690+0+0')
@@ -96,13 +99,6 @@ class ventanaprincipal(Tk):
         e_b4 = StringVar()
         e_b5 = StringVar()
 
-        cevar = StringVar()
-        cpvar = StringVar()
-        cbvar = StringVar()
-        stvar = StringVar()
-        imvar = StringVar()
-        ctvar = StringVar()
-
         e_e1.set('0')
         e_e2.set('0')
         e_e3.set('0')
@@ -124,23 +120,16 @@ class ventanaprincipal(Tk):
         e_b4.set('0')
         e_b5.set('0')
 
-        # FUNCIONES
+        cevar = StringVar()
+        cpvar = StringVar()
+        cbvar = StringVar()
+        stvar = StringVar()
+        imvar = StringVar()
+        ctvar = StringVar()
 
-        def guardar():
-            if textrecibo.get(1.0,END)=='\n':
-                pass
-            else:
-                url = filedialog.asksaveasfile(mode='w',defaultextension='.txt')
-                if url==None:
-                    pass
-                else:
-                    comprobante_data=textrecibo.get(1.0,END)
-                    url.write(comprobante_data)
-                    url.close()
-                    messagebox.showinfo('Información','El comprobante se ha guardado exitosamente')
-
+        # FUNCIONES DE PEDIDO
         def bt_total():
-            global precio_Entrada, precio_Fondo, precio_Bebida, subTotalItems, Impuesto
+            global precio_Entrada, precio_Fondo, precio_Bebida, sub_total, impuesto
             if var1.get() != 0 or var2.get() != 0 or var3.get() != 0 or var4.get() != 0 or var5.get() != 0 or\
                     var6.get() != 0 or var7.get() != 0 or var8.get() != 0 or var9.get() != 0 or var10.get() != 0 or\
                     var11.get() != 0 or var12.get() != 0 or var13.get() != 0 or var14.get() != 0 or var15.get() != 0 \
@@ -173,128 +162,28 @@ class ventanaprincipal(Tk):
                 precio_Fondo = (item5 * 13) + (item6 * 13) + (item7 * 14) + (item8 * 14) + (item9 * 14) +\
                                (item10 * 14) + (item11 * 14) + (item12 * 14) + (item13 * 15) + (item14 * 15) +\
                                (item15 * 15)
-                precio_Bebida = (item16 * 8) + (item17 * 8) + (item18 * 8) + (item19 * 7) + (item20 * 7)
+                precio_Bebida = (item16 * 10) + (item17 * 10) + (item18 * 10) + (item19 * 8) + (item20 * 8)
 
-                cevar.set('S/. ' + str(precio_Entrada))
-                cpvar.set('S/. ' + str(precio_Fondo))
-                cbvar.set('S/. ' + str(precio_Bebida))
+                cevar.set('S/. ' + str("{:.2f}".format(precio_Entrada)))
+                cpvar.set('S/. ' + str("{:.2f}".format(precio_Fondo)))
+                cbvar.set('S/.' + str("{:.2f}".format(precio_Bebida)))
 
-                subTotalItems = precio_Entrada + precio_Fondo + precio_Bebida
-                stvar.set('S/. ' + str(subTotalItems))
+                sub_total = ((precio_Entrada + precio_Fondo + precio_Bebida)-0.18*(precio_Entrada + precio_Fondo +
+                                                                                   precio_Bebida))
+                stvar.set('S/. ' + str("{:.2f}".format(sub_total)))
 
-                Impuesto = (round(subTotalItems*0.18))
-                imvar.set('S/. ' + str(Impuesto))
+                impuesto = ((precio_Entrada + precio_Fondo + precio_Bebida)*0.18)
+                imvar.set('S/. ' + str("{:.2f}".format(impuesto)))
 
-                costototal = subTotalItems + Impuesto
-                ctvar.set('S/. ' + str(costototal))
+                costototal = sub_total + impuesto
+                ctvar.set('S/. ' + str("{:.2f}".format(costototal)))
+
             else:
-                messagebox.showerror('Error','No ha seleccionado ningún item')
+                messagebox.showerror('Error', 'No ha seleccionado ningún item')
 
-        def comprobante():
-            global date
-            if cevar.get() != '' or cpvar.get() != '' or cbvar.get() != '':
-                textrecibo.delete(1.0, END)
-                x = random.randint(1,1000)
-                orden = str(x)
-                date = time.strftime('%d/%m/%Y')
-                textrecibo.insert(END, 'LA CHIMBOTANA RESTAURANT\t \n')
-                textrecibo.insert(END, 'Jr. Carlos de los Heros 388, Chimbote\t \n')
-                textrecibo.insert(END, 'Celular: 933070855\n')
-                textrecibo.insert(END, '-----------------------------------------------------------------\n')
-                textrecibo.insert(END, '\tRUC:20606667109\t \n')
-                textrecibo.insert(END, '-----------------------------------------------------------------\n')
-                textrecibo.insert(END, 'BOLETA DE VENTA ELECTRÓNICA\t \n')
-                textrecibo.insert(END, '-----------------------------------------------------------------\n')
-                textrecibo.insert(END, f'Orden: {orden} \n')
-                textrecibo.insert(END, 'Cliente: \n')
-                textrecibo.insert(END, 'DNI: \n')
-                textrecibo.insert(END, 'Dirección: \n')
-                textrecibo.insert(END,  f'F. Emisión: {date} \n')
-                textrecibo.insert(END, '------------------------------------------------------------------\n')
-                textrecibo.insert(END, 'Items:\t\t\t Costo del Item(S/.)\n')
-                textrecibo.insert(END, '------------------------------------------------------------------\n')
-
-                if e_e1.get() != '0':
-                    textrecibo.insert(END, f'- Palta rellena\t\t\t\t{int(e_e1.get())*5}\n\n')
-
-                if e_e2.get() != '0':
-                    textrecibo.insert(END, f'- Cebiche de pescado\t\t\t\t{int(e_e2.get())*5}\n\n')
-
-                if e_e3.get() != '0':
-                    textrecibo.insert(END, f'- Chicharrón de pota\t\t\t\t{int(e_e3.get())*5}\n\n')
-
-                if e_e4.get() != '0':
-                    textrecibo.insert(END, f'- Causa limeña\t\t\t\t{int(e_e4.get())*5}\n\n')
-
-                if e_p1.get() != '0':
-                    textrecibo.insert(END, f'- Chicharrón de pollo\t\t\t\t{int(e_p1.get())*13}\n\n')
-
-                if e_p2.get() != '0':
-                    textrecibo.insert(END, f'- Tallarín saltado de pollo\t\t\t\t{int(e_p2.get())*13}\n\n')
-
-                if e_p3.get() != '0':
-                    textrecibo.insert(END, f'- Lomo saltado\t\t\t\t{int(e_p3.get())*14}\n\n')
-
-                if e_p4.get() != '0':
-                    textrecibo.insert(END, f'- Arroz con mariscos\t\t\t\t{int(e_p4.get())*14}\n\n')
-
-                if e_p5.get() != '0':
-                    textrecibo.insert(END, f'- Chicharrón de pescado\t\t\t\t{int(e_p5.get()) * 14}\n\n')
-
-                if e_p6.get() != '0':
-                    textrecibo.insert(END, f'- Picante de mariscos\t\t\t\t{int(e_p6.get())*14}\n\n')
-
-                if e_p7.get() != '0':
-                     textrecibo.insert(END, f'- Spaghetti a la huancaína\t\t\t\t{int(e_p7.get()) * 14}\n\n')
-
-                if e_p8.get() != '0':
-                     textrecibo.insert(END, f'- Tallarines verdes con lomo\t\t\t\t{int(e_p8.get()) * 14}\n\n')
-
-                if e_p9.get() != '0':
-                     textrecibo.insert(END, f'- Chicharrón a lo macho\t\t\t\t{int(e_p9.get()) * 15}\n\n')
-
-                if e_p10.get() != '0':
-                     textrecibo.insert(END, f'- Tacu tacu a lo macho\t\t\t\t{int(e_p10.get()) * 15}\n\n')
-
-                if e_p11.get() != '0':
-                     textrecibo.insert(END, f'- Picante de langostinos\t\t\t\t{int(e_p11.get()) * 15}\n\n')
-
-                if e_b1.get() != '0':
-                     textrecibo.insert(END, f'- Limonada\t\t\t\t{int(e_b1.get()) * 8}\n\n')
-
-                if e_b2.get() != '0':
-                     textrecibo.insert(END, f'- Maracuyá\t\t\t\t{int(e_b2.get()) * 8}\n\n')
-
-                if e_b3.get() != '0':
-                     textrecibo.insert(END, f'- Chicha morada\t\t\t\t{int(e_b3.get()) * 8}\n\n')
-
-                if e_b4.get() != '0':
-                     textrecibo.insert(END, f'- Inka Cola 1L\t\t\t\t{int(e_b4.get()) * 7}\n\n')
-
-                if e_b5.get() != '0':
-                     textrecibo.insert(END, f'- Coca Cola 1L\t\t\t\t{int(e_b5.get()) * 7}\n\n')
-
-                textrecibo.insert(END, '-------------------------------------------------------------\n')
-
-                if cevar.get()!='S/. 0':
-                    textrecibo.insert(END, f' Costo Entradas\t\t S/. {precio_Entrada}\n\n')
-                if cpvar.get()!='S/. 0':
-                    textrecibo.insert(END, f' Costo Menú\t\t S/. {precio_Fondo}\n\n')
-                if cbvar.get()!='S/. 0':
-                    textrecibo.insert(END, f' Costo Bebidas\t\t S/. {precio_Bebida}\n\n')
-
-                textrecibo.insert(END, f' SUBTOTAL\t\t S/. {subTotalItems}\n\n')
-                textrecibo.insert(END, f' IGV 18%\t\t S/. {Impuesto}\n\n')
-                textrecibo.insert(END, f' IMPORTE TOTAL\t\t S/. {subTotalItems+Impuesto}\n\n')
-                textrecibo.insert(END, '------------------------------------------------------------\n')
-                textrecibo.insert(END, ' MUCHAS GRACIAS POR SU COMPRA\n')
-            else:
-                messagebox.showerror('Error', 'No hay items seleccionados')
-
-        def salir():
-            valor = messagebox.askquestion("Salir", "Desea Salir del Sistema ")
-            if valor == "yes":
-                self.destroy()
+        def registrar():
+            global nombre, info_ad
+            registro.grab_set()
 
         def limpiar():
             textrecibo.delete(1.0,END)
@@ -367,7 +256,6 @@ class ventanaprincipal(Tk):
             imvar.set('')
             stvar.set('')
             ctvar.set('')
-
 
         def e1():
             if var1.get() == 1:
@@ -549,9 +437,150 @@ class ventanaprincipal(Tk):
                 textb5.config(state=DISABLED)
                 e_b5.set('0')
 
+        def salir():
+            valor = messagebox.askquestion("Salir", "Desea Salir del Sistema ")
+            if valor == "yes":
+                self.destroy()
 
-        #####Entradas
+        # FUNCIONES DE CAJA
+        def comprobante():
+            global fecha
+            if cevar.get() != '' or cpvar.get() != '' or cbvar.get() != '':
+                textrecibo.delete(1.0, END)
+                x = random.randint(1,1000)
+                orden = str(x)
+                fecha = time.strftime('%d/%m/%Y')
+                textrecibo.insert(END, 'LA CHIMBOTANA RESTAURANT\t \n')
+                textrecibo.insert(END, 'Jr. Carlos de los Heros 388, Chimbote\t \n')
+                textrecibo.insert(END, 'Celular: 933070855\n')
+                textrecibo.insert(END, '------------------------------------------------------------------------\n')
+                textrecibo.insert(END, '\tRUC:20606667109\t \n')
+                textrecibo.insert(END, '------------------------------------------------------------------------\n')
+                textrecibo.insert(END, 'BOLETA DE VENTA ELECTRÓNICA\t \n')
+                textrecibo.insert(END, '------------------------------------------------------------------------\n')
+                textrecibo.insert(END, f'Orden: {orden} \n')
+                textrecibo.insert(END, 'Cliente: \n')
+                textrecibo.insert(END, 'DNI: \n')
+                textrecibo.insert(END, 'Dirección: \n')
+                textrecibo.insert(END,  f'F. Emisión: {fecha} \n')
+                textrecibo.insert(END, '------------------------------------------------------------------------\n')
+                textrecibo.insert(END, 'Items:\t\t\t Costo del Item(S/.)\n')
+                textrecibo.insert(END, '------------------------------------------------------------------------\n')
 
+                if e_e1.get() != '0':
+                    textrecibo.insert(END, f'Palta rellena\t\t\t\t{(int(e_e1.get())*5)}\n\n')
+
+                if e_e2.get() != '0':
+                    textrecibo.insert(END, f'Cebiche de pescado\t\t\t{(int(e_e2.get())*5)}\n\n')
+
+                if e_e3.get() != '0':
+                    textrecibo.insert(END, f'Chicharrón de pota\t\t\t{(int(e_e3.get())*5)}\n\n')
+
+                if e_e4.get() != '0':
+                    textrecibo.insert(END, f'Causa limeña\t\t\t\t{(int(e_e4.get())*5)}\n\n')
+
+                if e_p1.get() != '0':
+                    textrecibo.insert(END, f'Chicharrón de pollo\t\t\t{(int(e_p1.get())*13)}\n\n')
+
+                if e_p2.get() != '0':
+                    textrecibo.insert(END, f'Tallarín saltado de pollo\t\t{int(e_p2.get())*13}\n\n')
+
+                if e_p3.get() != '0':
+                    textrecibo.insert(END, f'Lomo saltado\t\t\t\t{int(e_p3.get())*14}\n\n')
+
+                if e_p4.get() != '0':
+                    textrecibo.insert(END, f'Arroz con mariscos\t\t\t{int(e_p4.get())*14}\n\n')
+
+                if e_p5.get() != '0':
+                    textrecibo.insert(END, f'Chicharrón de pescado\t\t\t{int(e_p5.get())*14}\n\n')
+
+                if e_p6.get() != '0':
+                    textrecibo.insert(END, f'Picante de mariscos\t\t\t{int(e_p6.get())*14}\n\n')
+
+                if e_p7.get() != '0':
+                     textrecibo.insert(END, f'Spaghetti a la huancaína\t\t{int(e_p7.get())*14}\n\n')
+
+                if e_p8.get() != '0':
+                     textrecibo.insert(END, f'Tallarines verdes con lomo\t\t{int(e_p8.get())*14}\n\n')
+
+                if e_p9.get() != '0':
+                     textrecibo.insert(END, f'Chicharrón a lo macho\t\t\t{int(e_p9.get())*15}\n\n')
+
+                if e_p10.get() != '0':
+                     textrecibo.insert(END, f'Tacu tacu a lo macho\t\t\t{int(e_p10.get())*15}\n\n')
+
+                if e_p11.get() != '0':
+                     textrecibo.insert(END, f'Picante de langostinos\t\t\t{int(e_p11.get())*15}\n\n')
+
+                if e_b1.get() != '0':
+                     textrecibo.insert(END, f'Limonada 1L\t\t\t\t{int(e_b1.get())*10}\n\n')
+
+                if e_b2.get() != '0':
+                     textrecibo.insert(END, f'Maracuyá 1L\t\t\t\t{int(e_b2.get())*10}\n\n')
+
+                if e_b3.get() != '0':
+                     textrecibo.insert(END, f'Chicha morada 1L\t\t\t{int(e_b3.get())*10}\n\n')
+
+                if e_b4.get() != '0':
+                     textrecibo.insert(END, f'Inka Cola 1L\t\t\t\t{int(e_b4.get())*8}\n\n')
+
+                if e_b5.get() != '0':
+                     textrecibo.insert(END, f'Coca Cola 1L\t\t\t\t{int(e_b5.get())*8}\n\n')
+
+                textrecibo.insert(END, '------------------------------------------------------------------------\n')
+
+                if cevar.get() != 'S/. 0.00':
+                    textrecibo.insert(END, f'Costo Entradas\t\t\tS/. {precio_Entrada:.2f}\n\n')
+                if cpvar.get() != 'S/. 0.00':
+                    textrecibo.insert(END, f' Costo Menú\t\t\tS/. {precio_Fondo:.2f}\n\n')
+                if cbvar.get() != 'S/. 0.00':
+                    textrecibo.insert(END, f' Costo Bebidas\t\t\t S/. {precio_Bebida:.2f}\n\n')
+
+                textrecibo.insert(END, f' SUBTOTAL\t\t\tS/. {sub_total:.2f}\n\n')
+                textrecibo.insert(END, f' IGV 18%\t\t\tS/. {impuesto:.2f}\n\n')
+                textrecibo.insert(END, f' IMPORTE TOTAL\t\t\tS/. {sub_total+impuesto:.2f}\n\n')
+                textrecibo.insert(END, '-----------------------------------------------------------------------\n')
+                textrecibo.insert(END, ' MUCHAS GRACIAS POR SU COMPRA\n')
+            else:
+                messagebox.showerror('Error', 'No hay items seleccionados')
+
+        def guardar():
+            if textrecibo.get(1.0, END) == '\n':
+                pass
+            else:
+                url = filedialog.asksaveasfile(mode='w', defaultextension='.txt')
+                if url == None:
+                    pass
+                else:
+                    comprobante_data = textrecibo.get(1.0, END)
+                    url.write(comprobante_data)
+                    url.close()
+                    messagebox.showinfo('Información', 'El comprobante se ha guardado exitosamente')
+
+        def generar_reporte_cierre():
+            ventana_reporte_cierre=Tk()
+            ventana_reporte_cierre.geometry('800x800')
+            ventana_reporte_cierre.title("Reporte de cierre de la caja")
+            ventana_reporte_cierre.resizable(0, 0)
+
+            frame_info = Frame(ventana_reporte_cierre, bd=8, relief=RIDGE, pady=15,bg='gray')
+            frame_info.grid(column=0, row=0, sticky='W')
+            frame_ingresos = Frame(ventana_reporte_cierre, bd=8, relief=RIDGE, pady=15,bg='light gray')
+            frame_ingresos.grid(column=0, row=1, sticky='W')
+            frame_egresos = Frame(ventana_reporte_cierre, bd=8, relief=RIDGE, pady=15,bg='blue')
+            frame_egresos.grid(column=0, row=2, sticky='W')
+            frame_caja = Frame(ventana_reporte_cierre, bd=8, relief=RIDGE, pady=15,bg='red')
+            frame_caja.grid(column=0, row=3, sticky='W')
+
+            ingresos_titulo= LabelFrame(frame_ingresos, text='Ingresos', font=('arial', 19, 'bold'), bd=6
+                                        , relief=RIDGE, fg='steel blue')
+            ingresos_titulo.grid(side=TOP)
+
+            egresos_titulo = LabelFrame(frame_egresos, text='Egresos', font=('arial', 19, 'bold')
+                                        , bd=6, relief=RIDGE, fg='steel blue')
+            egresos_titulo.grid(side=TOP)
+
+        # CHECKBUTTON DE LAS ENTRADAS
         e1 = Checkbutton(entrada_frame, text='Palta rellena', font=('arial', 12, 'bold'), onvalue=1, offvalue=0,
                          variable=var1, command=e1)
         e1.grid(row=0, column=0, sticky=W)
@@ -568,8 +597,7 @@ class ventanaprincipal(Tk):
                          variable=var4, command=e4)
         e4.grid(row=3, column=0, sticky=W)
 
-        #######Campo de entradas
-
+        # ENTRIES DE LAS ENTRADAS
         texte1 = Entry(entrada_frame, font=('arial', 12, 'bold'), bd=7, width=6, state=DISABLED, textvariable=e_e1)
         texte1.grid(row=0, column=1)
 
@@ -582,7 +610,7 @@ class ventanaprincipal(Tk):
         texte4 = Entry(entrada_frame, font=('arial', 12, 'bold'), bd=7, width=6, state=DISABLED, textvariable=e_e4)
         texte4.grid(row=3, column=1)
 
-        # Comidas
+        # CHECKBUTTON DEL MENÚ
         p1 = Checkbutton(fondo_frame, text='Chicharrón de pollo', font=('arial', 12, 'bold'), onvalue=1, offvalue=0,
                          variable=var5, command=p1)
         p1.grid(row=0, column=2, sticky=W)
@@ -627,7 +655,7 @@ class ventanaprincipal(Tk):
                           variable=var15, command=p11)
         p11.grid(row=10, column=2, sticky=W)
 
-        # Campo de platos de fondo
+        # ENTRIES DEL MENÚ
         textp1 = Entry(fondo_frame, font=('arial', 12, 'bold'), bd=7, width=6, state=DISABLED, textvariable=e_p1)
         textp1.grid(row=0, column=3)
 
@@ -661,7 +689,7 @@ class ventanaprincipal(Tk):
         textp11 = Entry(fondo_frame, font=('arial', 12, 'bold'), bd=7, width=6, state=DISABLED, textvariable=e_p11)
         textp11.grid(row=10, column=3)
 
-        # Bebidas
+        # CHECKBUTTON DE LAS BEBIDAS
         b1 = Checkbutton(bebida_frame, text='Limonada 1L', font=('arial', 12, 'bold'), onvalue=1, offvalue=0,
                          variable=var16, command=b1)
         b1.grid(row=0, column=4, sticky=W)
@@ -682,8 +710,7 @@ class ventanaprincipal(Tk):
                          variable=var20, command=b5)
         b5.grid(row=4, column=4, sticky=W)
 
-        # Campo de bebidas
-
+        # ENTRIES DE LAS BEBIDAS
         textb1 = Entry(bebida_frame, font=('arial', 12, 'bold'), bd=7, width=6, state=DISABLED, textvariable=e_b1)
         textb1.grid(row=0, column=5)
 
@@ -699,7 +726,7 @@ class ventanaprincipal(Tk):
         textb5 = Entry(bebida_frame, font=('arial', 12, 'bold'), bd=7, width=6, state=DISABLED, textvariable=e_b5)
         textb5.grid(row=4, column=5)
 
-        # COSTOS LABELS & ENTRADAS
+        # LABEL, ENTRY DE LOS COSTOS, SUBTOTAL, IMPUESTO E IMPORTE TOTAL
         label_costodeentrada = Label(costo_frame, text='Costo de Entradas', font=('arial', 14, 'bold'), fg='white',
                                      bg='DodgerBlue4')
         label_costodeentrada.grid(row=0, column=0)
@@ -746,7 +773,7 @@ class ventanaprincipal(Tk):
         boton_total.grid(row=0, column=0)
 
         boton_registrar = Button(pedido_frame, text='Registrar', font=('arial', 13, 'bold'), fg='white',
-                                 bg='sandy brown', bd=3, padx=17,command=self.registrar)
+                                 bg='sandy brown', bd=3, padx=13, command=registrar)
         boton_registrar.grid(row=0, column=1)
 
         boton_limpiar = Button(pedido_frame, text='Limpiar', font=('arial', 12, 'bold'), fg='white', bg='salmon', bd=3,
@@ -754,34 +781,21 @@ class ventanaprincipal(Tk):
         boton_limpiar.grid(row=0, column=2)
 
         boton_salir = Button(pedido_frame, text='Salir', font=('arial', 13, 'bold'), fg='white', bg='salmon', bd=3,
-                             padx=20, command=salir)
+                             padx=15, command=salir)
         boton_salir.grid(row=0, column=3)
 
-        boton_comprobante = Button(caja_frame, text='Boleta', font=('arial', 12, 'bold'), fg='white', bg='salmon',bd=3,
-                                   command=comprobante)
+        boton_comprobante = Button(caja_frame, text='Comprobante', font=('arial', 12, 'bold'), fg='white', bg='salmon',bd=3,
+                                   padx=5, command=comprobante)
         boton_comprobante.grid(row=0, column=0)
 
         boton_guardar = Button(caja_frame, text='Guardar', font=('arial', 13, 'bold'), fg='white', bg='salmon', bd=3,
                                padx=5, command=guardar)
         boton_guardar.grid(row=0, column=1)
 
-        boton_egresos = Button(caja_frame, text='Egresos', font=('arial', 13, 'bold'), fg='white', bg='sandy brown',
-                               bd=3,padx=5)
-        boton_egresos.grid(row=0, column=2)
-
-        boton_reporte = Button(caja_frame, text='Reporte', font=('arial', 12, 'bold'), fg='white', bg='sandy brown',
-                               bd=3)
-        boton_reporte.grid(row=0, column=3)
-
+        boton_reporte = Button(caja_frame, text='Cierre', font=('arial', 12, 'bold'), fg='white', bg='sandy brown',
+                               bd=3, padx=10, command=generar_reporte_cierre)
+        boton_reporte.grid(row=0, column=2)
 
         #TEXTO DE BOLETA
         textrecibo = Text(recibo_frame, font=('arial', 12, 'bold'), bd=3, width=40, height=20)
         textrecibo.grid(row=0, column=0, sticky=W)
-
-    def registrar(self):
-        registro = Registro2()
-        self.registro.grab_set()
-
-
-
-
